@@ -14,6 +14,8 @@ spec:
           - path: "*"
           - path: argocd
             exclude: true
+          - path: walkthrough
+            exclude: true
   template:
     metadata:
       name: "{{.path.basename}}"

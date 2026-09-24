@@ -1,4 +1,4 @@
-# ops
+# Install
 
 Install for the **beta-if-market** EKS cluster in `us-east-1`.
 
@@ -42,14 +42,14 @@ If the webhook objects fail with `no endpoints available for service "cert-manag
 
 ## Argo CD
 
-Argo CD syncs every top-level directory except `argocd/`. `clickhouse/` is the first one. A later service is another directory with a `deployment.yml`, for example `bots/deployment.yml` or `s3-worker/deployment.yml`.
+Argo CD syncs every top-level directory except `argocd/` and `walkthrough/`. `clickhouse/` is the first one. A later service is another directory with a `deployment.yml`, for example `bots/deployment.yml` or `s3-worker/deployment.yml`.
 
 Push `main` to https://github.com/eternalabs/if-market-ops.git before applying the ApplicationSet. Argo reads that remote, not the files on your laptop.
 
 ```bash
 kubectl create namespace argocd
-kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+kubectl apply --server-side --force-conflicts -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
 kubectl -n argocd rollout status deploy/argocd-server
-kubectl apply -f argocd/applicationset.yml
+kubectl apply -f https://raw.githubusercontent.com/eternalabs/if-market-ops/main/argocd/applicationset.yml
 kubectl -n argocd get applications
 ```
