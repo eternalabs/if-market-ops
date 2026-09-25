@@ -4,28 +4,29 @@ kind: Kustomization
 namespace: clickhouse-worker
 
 resources:
-  - namespace.yml
-  - dockerhub-pull.sealed-secret.yml
-  - serviceaccount.yml
-  - common-env.yml
-  - sealed-secret.yml
-  - schema-init-job.yml
-  - deployment.yml
+- namespace.yml
+- dockerhub-pull.sealed-secret.yml
+- serviceaccount.yml
+- common-env.yml
+- sealed-secret.yml
+- schema-init-job.yml
+- deployment.yml
 
 # The worker reads its TOML from disk. Generating the ConfigMap here gives it a
 # content-hash suffix, so editing clickhouse-worker.toml rolls the pod. The
 # TOML carries no credentials; connection settings are env-overridden (see the
 # header in that file).
 configMapGenerator:
-  - name: clickhouse-worker-config
-    files:
-      - clickhouse-worker.toml
-  - name: clickhouse-schema
-    files:
-      - 0001_init.sql
+- files:
+  - clickhouse-worker.toml
+  name: clickhouse-worker-config
+- files:
+  - 0001_init.sql
+  name: clickhouse-schema
 
 # CI rewrites newTag (kustomize edit set image). Do not edit by hand unless
 # rolling back on purpose.
 images:
-  - name: docker.io/labseterna/if-market-beta-clickhouse-worker
-    newTag: sha-0e232c2
+- name: docker.io/labseterna/if-market-beta-clickhouse-worker
+  newName: docker.io/labseterna/if-market-beta-clickhouse-worker
+  newTag: sha-da8bea1
