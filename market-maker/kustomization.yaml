@@ -27,4 +27,4 @@ resources:
 images:
 - name: docker.io/labseterna/if-market-beta-market-maker
   newName: docker.io/labseterna/if-market-beta-market-maker
-  newTag: sha-8e1fcdc
+  newTag: sha-612f056
