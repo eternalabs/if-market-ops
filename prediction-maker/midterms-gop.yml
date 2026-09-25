@@ -1,0 +1,151 @@
+# Translated from compose service `prediction-maker-midterms-gop`
+# (container ifmarket-pred-maker-midterms-gop) in
+# docker-compose.beta-bots.yml. Shared knobs come from the
+# prediction-maker-common ConfigMap; credentials from Secret prediction-maker-midterms-gop.
+#
+# prediction-inventory-<user>-<market>.json records an unresolved mint and
+# must survive pod restarts; never delete this claim while the market is open.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: prediction-maker-midterms-gop-runtime
+  labels:
+    app.kubernetes.io/name: prediction-maker
+    app.kubernetes.io/instance: midterms-gop
+    app.kubernetes.io/part-of: if-market
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: gp3
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prediction-maker-midterms-gop
+  labels:
+    app.kubernetes.io/name: prediction-maker
+    app.kubernetes.io/instance: midterms-gop
+    app.kubernetes.io/part-of: if-market
+spec:
+  replicas: 1
+  # Exactly one quoting process per market and wallet; never overlap old/new.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: prediction-maker
+      app.kubernetes.io/instance: midterms-gop
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: prediction-maker
+        app.kubernetes.io/instance: midterms-gop
+        app.kubernetes.io/part-of: if-market
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9464"
+    spec:
+      imagePullSecrets:
+        - name: dockerhub-pull
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        fsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: prediction-maker
+          image: docker.io/labseterna/if-market-beta-prediction-maker
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef:
+                name: prediction-maker-common
+            - secretRef:
+                name: prediction-maker-midterms-gop
+          env:
+            - name: POLYMARKET_ALLOW_CONTRACT_MISMATCH
+              value: "true"
+            - name: POLYMARKET_ALIGNMENT_BAND
+              value: "0.010000"
+            - name: POLYMARKET_IF_MARKET_ID
+              value: "2"
+            - name: POLYMARKET_IF_YES_OUTCOME_ID
+              value: "5"
+            - name: POLYMARKET_IF_NO_OUTCOME_ID
+              value: "6"
+            - name: POLYMARKET_MARKET_SLUG
+              value: "2026-balance-of-power-r-senate-r-house-537"
+            - name: POLYMARKET_MARKET_URL
+              value: "https://polymarket.com/event/balance-of-power-2026-midterms/2026-balance-of-power-r-senate-r-house-537"
+            - name: POLYMARKET_CONDITION_ID
+              value: "0xc5eae79d1ffe716572353962eb926b1e3964c500a4880a7a94f58408218ee76b"
+            - name: POLYMARKET_YES_TOKEN_ID
+              value: "103704141773947678931823410030956181918562062788486034785782641603149828893320"
+            - name: POLYMARKET_NO_TOKEN_ID
+              value: "25869296386911654049715489068824757745174681288397238521780118949553760488529"
+            - name: POLYMARKET_YES_OUTCOME_LABEL
+              value: "Yes"
+            - name: POLYMARKET_NO_OUTCOME_LABEL
+              value: "No"
+            - name: PREDICTION_MAKER_LEVELS
+              value: "20"
+            - name: PREDICTION_MAKER_ORDER_SIZE
+              value: "250"
+            - name: PREDICTION_MAKER_MINT_QTY
+              value: "50000000"
+            - name: PREDICTION_MAKER_LEVEL_SIZE_STEP_BPS
+              value: "250"
+            - name: PREDICTION_MAKER_LEVEL_SIZE_CURVE_BPS
+              value: "4"
+            - name: PREDICTION_MAKER_LEVEL_SIZE_JITTER_BPS
+              value: "50"
+            - name: PREDICTION_MAKER_MARKET_ID
+              value: "2"
+            - name: POLYMARKET_REFERENCE_MODE
+              value: "live"
+            - name: PREDICTION_MAKER_MIN_ORDER_NOTIONAL
+              value: "100000"
+            - name: PREDICTION_MAKER_MAX_ORDER_NOTIONAL
+              value: "120000"
+            - name: PREDICTION_MAKER_MAX_INVENTORY_QTY
+              value: "50000000"
+          ports:
+            - name: metrics
+              containerPort: 9464
+          startupProbe:
+            tcpSocket:
+              port: metrics
+            periodSeconds: 5
+            failureThreshold: 24
+          livenessProbe:
+            tcpSocket:
+              port: metrics
+            periodSeconds: 15
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 250m
+              memory: 256Mi
+            limits:
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: runtime
+              mountPath: /app/.runtime/prediction-makers
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: runtime
+          persistentVolumeClaim:
+            claimName: prediction-maker-midterms-gop-runtime
+        - name: tmp
+          emptyDir: {}

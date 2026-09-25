@@ -1,0 +1,139 @@
+# Translated from compose service `market-maker-midterms-gop-btc`
+# (container ifmarket-mm-midterms-gop-btc) in
+# docker-compose.beta-bots.yml. Shared knobs come from the
+# market-maker-common ConfigMap; credentials from Secret market-maker-midterms-gop-btc.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: market-maker-midterms-gop-btc
+  labels:
+    app.kubernetes.io/name: market-maker
+    app.kubernetes.io/instance: midterms-gop-btc
+    app.kubernetes.io/part-of: if-market
+spec:
+  replicas: 1
+  # Exactly one quoting process per market and wallet; never overlap old/new.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: market-maker
+      app.kubernetes.io/instance: midterms-gop-btc
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: market-maker
+        app.kubernetes.io/instance: midterms-gop-btc
+        app.kubernetes.io/part-of: if-market
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9464"
+    spec:
+      imagePullSecrets:
+        - name: dockerhub-pull
+      terminationGracePeriodSeconds: 90
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        fsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: market-maker
+          image: docker.io/labseterna/if-market-beta-market-maker
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef:
+                name: market-maker-common
+            - secretRef:
+                name: market-maker-midterms-gop-btc
+          env:
+            - name: MARKET_MAKER_MAX_INVENTORY
+              value: "0.12"
+            - name: MARKET_MAKER_SCENARIO_GAP_PERCENT
+              value: "2.5"
+            - name: MARKET_MAKER_PRICE_VARIANCE_BPS
+              value: "20"
+            - name: MARKET_MAKER_PRICE_VARIANCE_TARGET_SECS
+              value: "30"
+            - name: MARKET_MAKER_PRICE_VARIANCE_MAX_TICKS_PER_SECOND
+              value: "1"
+            - name: MARKET_MAKER_SWEEP_HOLD_SECS
+              value: "60"
+            - name: MARKET_MAKER_SWEEP_RETURN_SECS
+              value: "600"
+            - name: MARKET_MAKER_MARKET_ID
+              value: "2"
+            - name: MARKET_MAKER_ASSET_ID
+              value: "1"
+            - name: MARKET_MAKER_DEPTH_ROWS
+              value: "20"
+            - name: MARKET_MAKER_AGGREGATE_SIZES
+              value: "true"
+            - name: MARKET_MAKER_INNER_MIN_NOTIONAL
+              value: "1000"
+            - name: MARKET_MAKER_INNER_MAX_NOTIONAL
+              value: "1600"
+            - name: MARKET_MAKER_AGGREGATE_USD_DEPTH
+              value: "true"
+            - name: MARKET_MAKER_AGGREGATE_ROW_GROWTH_BPS
+              value: "200"
+            - name: MARKET_MAKER_BAND_LEVELS
+              value: "20"
+            - name: MARKET_MAKER_LEVELS
+              value: "20"
+            - name: MARKET_MAKER_RESTING_QUANTITY_LIMIT
+              value: "50000"
+            - name: MARKET_MAKER_ORDER_SIZE
+              value: "0.0027"
+            - name: MARKET_MAKER_MIN_ORDER_SIZE
+              value: "0.00001"
+            - name: MARKET_MAKER_SIZE_INCREMENT
+              value: "0.00001"
+            - name: MARKET_MAKER_TICK_SIZE
+              value: "1"
+            - name: MARKET_MAKER_SPREAD
+              value: "1"
+            - name: MARKET_MAKER_LEVEL_SPACING
+              value: "1"
+            - name: MARKET_MAKER_LEVEL_SIZE_STEP_BPS
+              value: "500"
+            - name: MARKET_MAKER_INVENTORY_SIZE_SKEW_BPS
+              value: "0"
+            - name: MARKET_MAKER_MAX_OPEN_NOTIONAL
+              value: "400000000"
+          ports:
+            - name: metrics
+              containerPort: 9464
+          startupProbe:
+            tcpSocket:
+              port: metrics
+            periodSeconds: 5
+            failureThreshold: 24
+          livenessProbe:
+            tcpSocket:
+              port: metrics
+            periodSeconds: 15
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 250m
+              memory: 256Mi
+            limits:
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: runtime
+              mountPath: /app/.runtime/market-makers
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: runtime
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}

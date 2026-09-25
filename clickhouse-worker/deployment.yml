@@ -1,0 +1,95 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: clickhouse-worker
+  labels:
+    app.kubernetes.io/name: clickhouse-worker
+    app.kubernetes.io/part-of: if-market
+spec:
+  replicas: 1
+  # One consumer per manual consumer group. Recreate guarantees the old pod is
+  # gone before the new one joins, so a rollout never has two members briefly
+  # fighting over the same partitions.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: clickhouse-worker
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: clickhouse-worker
+        app.kubernetes.io/part-of: if-market
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9464"
+    spec:
+      imagePullSecrets:
+        - name: dockerhub-pull
+      serviceAccountName: clickhouse-worker
+      terminationGracePeriodSeconds: 60
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        fsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: clickhouse-worker
+          image: docker.io/labseterna/if-market-beta-clickhouse-worker
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef:
+                name: clickhouse-worker-env
+            - secretRef:
+                name: clickhouse-worker-secrets
+          ports:
+            - name: metrics
+              containerPort: 9464
+          # The observability server binds as soon as the process starts; the
+          # Kafka/ClickHouse connections are retried internally.
+          startupProbe:
+            tcpSocket:
+              port: metrics
+            periodSeconds: 5
+            failureThreshold: 24
+          livenessProbe:
+            tcpSocket:
+              port: metrics
+            periodSeconds: 15
+            failureThreshold: 3
+          readinessProbe:
+            tcpSocket:
+              port: metrics
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1Gi
+            limits:
+              memory: 2Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: config
+              mountPath: /app/clickhouse-worker.toml
+              subPath: clickhouse-worker.toml
+              readOnly: true
+            # Scratch used only by the manual `repair-spot-status` subcommand
+            # (evidence output). Not durable state.
+            - name: repair-scratch
+              mountPath: /var/lib/ifmarket-clickhouse-worker
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: config
+          configMap:
+            name: clickhouse-worker-config
+        - name: repair-scratch
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}

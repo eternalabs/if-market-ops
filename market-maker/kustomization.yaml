@@ -1,0 +1,29 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: market-maker
+
+# One <market>.yml (Deployment) + <market>.sealed-secret.yml pair per open
+# market. Retire a market by deleting both files and their two lines here;
+# Argo prunes the objects. Market ids are reused after a catalog reset, so
+# never leave a resolved market's Deployment in place.
+resources:
+  - namespace.yml
+  - dockerhub-pull.sealed-secret.yml
+  - common-env.yml
+  - midterms-btc.sealed-secret.yml
+  - midterms-btc.yml
+  - midterms-gop-btc.sealed-secret.yml
+  - midterms-gop-btc.yml
+  - gemini-oct15-googl.sealed-secret.yml
+  - gemini-oct15-googl.yml
+  - iran-oct31-brentoil.sealed-secret.yml
+  - iran-oct31-brentoil.yml
+  - fed-oct28-gold.sealed-secret.yml
+  - fed-oct28-gold.yml
+
+# CI rewrites newTag (kustomize edit set image). Do not edit by hand unless
+# rolling back on purpose.
+images:
+  - name: docker.io/labseterna/if-market-beta-market-maker
+    newTag: sha-0000000

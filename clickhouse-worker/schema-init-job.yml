@@ -1,0 +1,58 @@
+# Applies the worker's schema to the in-cluster ClickHouse before every sync.
+# Every statement in 0001_init.sql is IF NOT EXISTS, so re-running is a no-op
+# on an initialized database. Argo deletes the previous Job before running it
+# again (hook-delete-policy), which is what lets an immutable Job re-run.
+#
+# The ClickHouse user/password used here are the worker's own credentials;
+# the user must exist and own if_market_logs first (see walkthrough/install.md,
+# "ClickHouse user").
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: clickhouse-schema-init
+  annotations:
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  backoffLimit: 6
+  ttlSecondsAfterFinished: 3600
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: clickhouse-schema-init
+        app.kubernetes.io/part-of: if-market
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: clickhouse-client
+          image: clickhouse/clickhouse-server:25.3
+          command: ["/bin/sh", "-ec"]
+          args:
+            - |
+              host="$(echo "$CLICKHOUSE_WORKER_CLICKHOUSE_URL" | sed -E 's#^https?://([^:/]+).*#\1#')"
+              echo "applying schema to ${host}"
+              clickhouse-client \
+                --host "$host" --port 9000 \
+                --user "$CLICKHOUSE_WORKER_CLICKHOUSE_USER" \
+                --password "$CLICKHOUSE_WORKER_CLICKHOUSE_PASSWORD" \
+                --multiquery < /schema/0001_init.sql
+              echo "schema applied"
+          envFrom:
+            - configMapRef:
+                name: clickhouse-worker-env
+            - secretRef:
+                name: clickhouse-worker-secrets
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 256Mi
+          volumeMounts:
+            - name: schema
+              mountPath: /schema
+              readOnly: true
+      volumes:
+        - name: schema
+          configMap:
+            name: clickhouse-schema

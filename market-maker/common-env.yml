@@ -1,0 +1,31 @@
+# Shared, non-sensitive environment for every market-maker Deployment.
+# Derived from the x-market-maker-environment block of
+# docker-compose.beta-bots.yml plus the non-secret keys of
+# deploy/market-maker.env.example. Diff against the live host env file
+# before cutover. Per-market values live in each <market>.yml and take
+# precedence (container env: overrides envFrom).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: market-maker-common
+data:
+  IF_MARKET_API_URL: "https://api.beta.if.market"
+  IF_MARKET_WS_URL: "wss://api.beta.if.market/ws"
+  MARKET_MAKER_RUNTIME_DIR: "/app/.runtime/market-makers"
+  MARKET_MAKER_ACCOUNT_MAX_RPS: "100"
+  MARKET_MAKER_SPOT_GRACE_MS: "300000"
+  MARKET_MAKER_MAX_INVENTORY: "100000"
+  MARKET_MAKER_HARD_INVENTORY_LIMIT: "1000000"
+  MARKET_MAKER_LEVEL_SIZE_CURVE_BPS: "10"
+  MARKET_MAKER_LEVEL_SIZE_JITTER_BPS: "100"
+  MARKET_MAKER_SCENARIO_GAP_PERCENT: "10"
+  MARKET_MAKER_MIN_SCENARIO_GAP_BPS: "100"
+  MARKET_MAKER_GAP_CONVERGENCE_POWER: "3"
+  ORDER_EIP712_CHAIN_ID: "998"
+  ORDER_EIP712_VERIFYING_CONTRACT: "0x0000000000000000000000000000000000000000"
+  MARKET_MAKER_REFRESH_MS: "100"
+  MARKET_MAKER_MAX_FEED_AGE_MS: "15000"
+  MARKET_MAKER_QUOTE_ERROR_GRACE_MS: "3000"
+  RUST_LOG: "info,bots=info"
+  IFMARKET_METRICS_ENABLED: "true"
+  IFMARKET_METRICS_BIND_ADDR: "0.0.0.0:9464"

@@ -1,0 +1,61 @@
+# Kubernetes copy of crates/clickhouse-worker/clickhouse-worker.toml.
+#
+# This file holds NO credentials. The worker's config loader requires every
+# key to be present (deny_unknown_fields, no defaults), then overrides the
+# connection settings from environment variables before validating:
+#
+#   kafka.brokers        <- CLICKHOUSE_WORKER_KAFKA_BROKERS        (Secret)
+#   clickhouse.user      <- CLICKHOUSE_WORKER_CLICKHOUSE_USER      (Secret)
+#   clickhouse.password  <- CLICKHOUSE_WORKER_CLICKHOUSE_PASSWORD  (Secret)
+#   clickhouse.url       <- CLICKHOUSE_WORKER_CLICKHOUSE_URL       (ConfigMap)
+#   clickhouse.database  <- CLICKHOUSE_WORKER_CLICKHOUSE_DATABASE  (ConfigMap)
+#   kafka.client_id_prefix / group_id_prefix / *_topic              (ConfigMap)
+#
+# The placeholders below therefore never reach a broker or ClickHouse; if an
+# override is missing the connection fails loudly instead of silently using a
+# default. Table names, stream ids and batching limits are the values that
+# matter here and must match the upstream file.
+
+[kafka]
+brokers = "overridden-by-CLICKHOUSE_WORKER_KAFKA_BROKERS"
+client_id_prefix = "if-market.clickhouse-worker.k8s"
+group_id_prefix = "if-market.clickhouse-worker.k8s.manual"
+clearing_topic = "clearing.v10"
+spot_topic = "realtime.spot.v1"
+candles_topic = "realtime.candles.v1"
+clearing_archive_stream_id = 302
+spot_archive_stream_id = 303
+candles_archive_stream_id = 304
+message_max_bytes = 17825792
+poll_timeout_ms = 100
+
+[clickhouse]
+url = "http://clickhouse-clickhouse-0-0-0.clickhouse-clickhouse-headless.clickhouse.svc.cluster.local:8123"
+user = "overridden-by-CLICKHOUSE_WORKER_CLICKHOUSE_USER"
+password = ""
+database = "if_market_logs"
+clearing_analytics_batches_table = "clearing_analytics_batches"
+projection_commits_table = "clearing_analytics_projection_commits"
+analytics_quarantine_table = "clearing_analytics_quarantine"
+user_fills_table = "user_fills"
+user_order_history_table = "user_order_history"
+user_ledger_events_table = "user_ledger_events"
+public_trades_table = "public_trades"
+outcome_volume_10m_table = "outcome_volume_10m"
+outcome_volume_daily_table = "outcome_volume_daily"
+outcome_volume_cache_table = "outcome_volume_cache"
+ingest_open_orders_table = "ingest_open_orders"
+user_metrics_6h_table = "user_metrics_6h"
+equity_snapshots_table = "account_equity_snapshots"
+leaderboard_table = "leaderboard_cache"
+spot_price_updates_table = "spot_price_updates"
+spot_candles_table = "spot_candles"
+outcome_candles_table = "outcome_candles"
+request_timeout_ms = 30000
+max_insert_block_size = 10000
+
+[ingestion]
+batch_max_records = 1000
+batch_max_bytes = 33554432
+batch_max_delay_ms = 100
+retry_delay_ms = 1000

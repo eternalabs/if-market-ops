@@ -1,0 +1,34 @@
+# Shared, non-sensitive environment for every prediction-maker Deployment.
+# Derived from the x-prediction-maker-environment block of
+# docker-compose.beta-bots.yml plus the non-secret keys of
+# deploy/prediction-maker.env.example. Diff against the live host env file
+# before cutover. Per-market values live in each <market>.yml and take
+# precedence (container env: overrides envFrom).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prediction-maker-common
+data:
+  IF_MARKET_API_URL: "https://api.beta.if.market"
+  IF_MARKET_WS_URL: "wss://api.beta.if.market/ws"
+  PREDICTION_MAKER_RUNTIME_DIR: "/app/.runtime/prediction-makers"
+  PREDICTION_MAKER_ACCOUNT_MAX_RPS: "100"
+  PREDICTION_MAKER_REFRESH_MS: "100"
+  PREDICTION_MAKER_LEVELS: "40"
+  PREDICTION_MAKER_ORDER_SIZE: "1000"
+  PREDICTION_MAKER_MINT_QTY: "100000"
+  PREDICTION_MAKER_LEVEL_SIZE_STEP_BPS: "500"
+  PREDICTION_MAKER_LEVEL_SIZE_CURVE_BPS: "10"
+  PREDICTION_MAKER_LEVEL_SIZE_JITTER_BPS: "100"
+  PREDICTION_MAKER_HALF_SPREAD: "0.005"
+  PREDICTION_MAKER_LEVEL_SPACING: "0.01"
+  PREDICTION_MAKER_TICK_SIZE: "0.01"
+  PREDICTION_MAKER_FLOW_CENTER_HOLD_MS: "2000"
+  PREDICTION_MAKER_FLOW_SLIDE_INTERVAL_MS: "1000"
+  PREDICTION_MAKER_FLOW_REPAIR_TIMEOUT_MS: "10000"
+  PREDICTION_MAKER_FLOW_MAX_RECOVERY_MS: "120000"
+  RUST_LOG: "info,bots::prediction_maker=debug"
+  ORDER_EIP712_CHAIN_ID: "998"
+  ORDER_EIP712_VERIFYING_CONTRACT: "0x0000000000000000000000000000000000000000"
+  IFMARKET_METRICS_ENABLED: "true"
+  IFMARKET_METRICS_BIND_ADDR: "0.0.0.0:9464"

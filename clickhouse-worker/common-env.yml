@@ -1,0 +1,35 @@
+# Non-sensitive runtime environment. Mirrors the clickhouse-worker service in
+# docker-compose.beta.yml, pointed at the in-cluster ClickHouse.
+#
+# Sensitive values (ClickHouse user/password, MSK bootstrap string) live in
+# sealed-secret.yml.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: clickhouse-worker-env
+data:
+  CLICKHOUSE_WORKER_CONFIG: /app/clickhouse-worker.toml
+
+  # Distinct from the EC2 worker's "if-market.clickhouse-worker.v10" prefixes.
+  # Both may consume the same topics during cutover; sharing a group would make
+  # them steal partitions from each other.
+  CLICKHOUSE_WORKER_KAFKA_CLIENT_ID_PREFIX: if-market.clickhouse-worker.k8s
+  CLICKHOUSE_WORKER_KAFKA_GROUP_ID_PREFIX: if-market.clickhouse-worker.k8s.manual
+  CLICKHOUSE_WORKER_KAFKA_CLEARING_TOPIC: clearing.v10
+  CLICKHOUSE_WORKER_KAFKA_SPOT_TOPIC: realtime.spot.v1
+  CLICKHOUSE_WORKER_KAFKA_CANDLES_TOPIC: realtime.candles.v1
+
+  KAFKA_IAM_AUTH: "true"
+  KAFKA_SECURITY_PROTOCOL: SASL_SSL
+  KAFKA_SASL_MECHANISM: OAUTHBEARER
+  AWS_REGION: us-east-1
+  AWS_DEFAULT_REGION: us-east-1
+
+  # Headless Service only; pin replica 0 so MergeTree reads and writes stay on
+  # one copy until the schema is ReplicatedMergeTree.
+  CLICKHOUSE_WORKER_CLICKHOUSE_URL: http://clickhouse-clickhouse-0-0-0.clickhouse-clickhouse-headless.clickhouse.svc.cluster.local:8123
+  CLICKHOUSE_WORKER_CLICKHOUSE_DATABASE: if_market_logs
+
+  IFMARKET_METRICS_ENABLED: "true"
+  IFMARKET_METRICS_BIND_ADDR: 0.0.0.0:9464
+  RUST_LOG: info,clickhouse_worker=info

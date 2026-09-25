@@ -1,0 +1,151 @@
+# Translated from compose service `prediction-maker-gemini-oct15`
+# (container ifmarket-pred-maker-gemini-oct15) in
+# docker-compose.beta-bots.yml. Shared knobs come from the
+# prediction-maker-common ConfigMap; credentials from Secret prediction-maker-gemini-oct15.
+#
+# prediction-inventory-<user>-<market>.json records an unresolved mint and
+# must survive pod restarts; never delete this claim while the market is open.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: prediction-maker-gemini-oct15-runtime
+  labels:
+    app.kubernetes.io/name: prediction-maker
+    app.kubernetes.io/instance: gemini-oct15
+    app.kubernetes.io/part-of: if-market
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: gp3
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prediction-maker-gemini-oct15
+  labels:
+    app.kubernetes.io/name: prediction-maker
+    app.kubernetes.io/instance: gemini-oct15
+    app.kubernetes.io/part-of: if-market
+spec:
+  replicas: 1
+  # Exactly one quoting process per market and wallet; never overlap old/new.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: prediction-maker
+      app.kubernetes.io/instance: gemini-oct15
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: prediction-maker
+        app.kubernetes.io/instance: gemini-oct15
+        app.kubernetes.io/part-of: if-market
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9464"
+    spec:
+      imagePullSecrets:
+        - name: dockerhub-pull
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        fsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: prediction-maker
+          image: docker.io/labseterna/if-market-beta-prediction-maker
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef:
+                name: prediction-maker-common
+            - secretRef:
+                name: prediction-maker-gemini-oct15
+          env:
+            - name: POLYMARKET_ALLOW_CONTRACT_MISMATCH
+              value: "true"
+            - name: POLYMARKET_ALIGNMENT_BAND
+              value: "0.010000"
+            - name: POLYMARKET_IF_MARKET_ID
+              value: "3"
+            - name: POLYMARKET_IF_YES_OUTCOME_ID
+              value: "9"
+            - name: POLYMARKET_IF_NO_OUTCOME_ID
+              value: "10"
+            - name: POLYMARKET_MARKET_SLUG
+              value: "will-the-next-google-gemini-pro-model-be-released-by-october-15-2026"
+            - name: POLYMARKET_MARKET_URL
+              value: "https://polymarket.com/event/next-google-gemini-pro-model-released-byptptpt/will-the-next-google-gemini-pro-model-be-released-by-october-15-2026"
+            - name: POLYMARKET_CONDITION_ID
+              value: "0x00a4931103ecaf1e7cfe50c67884038819707634b0c76e0996e8dbf473bb20c8"
+            - name: POLYMARKET_YES_TOKEN_ID
+              value: "95251539284492986442340502566918514324540337580995191125626518516263750210401"
+            - name: POLYMARKET_NO_TOKEN_ID
+              value: "61856944449476851648574860414500579398940259628018074804948523124007915473408"
+            - name: POLYMARKET_YES_OUTCOME_LABEL
+              value: "Yes"
+            - name: POLYMARKET_NO_OUTCOME_LABEL
+              value: "No"
+            - name: PREDICTION_MAKER_LEVELS
+              value: "20"
+            - name: PREDICTION_MAKER_ORDER_SIZE
+              value: "250"
+            - name: PREDICTION_MAKER_MINT_QTY
+              value: "50000000"
+            - name: PREDICTION_MAKER_LEVEL_SIZE_STEP_BPS
+              value: "250"
+            - name: PREDICTION_MAKER_LEVEL_SIZE_CURVE_BPS
+              value: "4"
+            - name: PREDICTION_MAKER_LEVEL_SIZE_JITTER_BPS
+              value: "50"
+            - name: PREDICTION_MAKER_MARKET_ID
+              value: "3"
+            - name: POLYMARKET_REFERENCE_MODE
+              value: "live"
+            - name: PREDICTION_MAKER_MIN_ORDER_NOTIONAL
+              value: "100000"
+            - name: PREDICTION_MAKER_MAX_ORDER_NOTIONAL
+              value: "120000"
+            - name: PREDICTION_MAKER_MAX_INVENTORY_QTY
+              value: "50000000"
+          ports:
+            - name: metrics
+              containerPort: 9464
+          startupProbe:
+            tcpSocket:
+              port: metrics
+            periodSeconds: 5
+            failureThreshold: 24
+          livenessProbe:
+            tcpSocket:
+              port: metrics
+            periodSeconds: 15
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 250m
+              memory: 256Mi
+            limits:
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: runtime
+              mountPath: /app/.runtime/prediction-makers
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: runtime
+          persistentVolumeClaim:
+            claimName: prediction-maker-gemini-oct15-runtime
+        - name: tmp
+          emptyDir: {}
