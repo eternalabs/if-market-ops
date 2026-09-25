@@ -27,4 +27,4 @@ resources:
 images:
 - name: docker.io/labseterna/if-market-beta-prediction-maker
   newName: docker.io/labseterna/if-market-beta-prediction-maker
-  newTag: sha-da8bea1
+  newTag: sha-8e1fcdc
