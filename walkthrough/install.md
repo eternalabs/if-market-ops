@@ -141,7 +141,7 @@ kubectl create secret docker-registry dockerhub-pull \
 | `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN` | `DOCKERHUB_USERNAME` is the user (`eternalabs`), not the org. The token is that user's personal access token with Read & Write. Images are pushed to `docker.io/labseterna/*`. |
 | `OPS_REPO_TOKEN` | fine-grained PAT, repository `eternalabs/if-market-ops`, permission Contents: Read and write; the workflow commits `Deploy <services> sha-xxxxxxx` to `main` |
 
-One workflow per service (`.github/workflows/clickhouse-worker.yml`, `market-maker.yml`, `prediction-maker.yml`) triggers on `codex/beta-f-staging` when that service's source paths change and calls the shared `_build-image.yml`, which builds `docker/<service>.Dockerfile`, pushes the image and runs `kustomize edit set image` in the matching directory here. Those Dockerfiles are standalone (no Aeron stage); the root `Dockerfile` is still the compose/EC2 build. Each service lands as its own `Deploy <service> sha-xxxxxxx` commit on `if-market-ops` `main`. Run a service's workflow manually from the Actions tab (`workflow_dispatch`) to force a build.
+One workflow per service (`.github/workflows/clickhouse-worker.yml`, `market-maker.yml`, `prediction-maker.yml`) triggers on `deployment-beta` when that service's source paths change and calls the shared `_build-image.yml`, which builds `docker/<service>.Dockerfile`, pushes the image and runs `kustomize edit set image` in the matching directory here. Those Dockerfiles are standalone (no Aeron stage); the root `Dockerfile` is still the compose/EC2 build. Each service lands as its own `Deploy <service> sha-xxxxxxx` commit on `if-market-ops` `main`. Open a PR into `deployment-beta` to release; do not push that branch directly. Run a service's workflow manually from the Actions tab (`workflow_dispatch`) to force a build.
 
 ## ClickHouse worker
 
@@ -195,6 +195,6 @@ Credentials created the same day and stored in AWS Secrets Manager (`us-east-1`)
 1. Sealed Secrets controller installed, master key backed up.
 2. ClickHouse user created; `clickhouse-worker/common-env.yml` URL verified; replication decision made.
 3. Seal every placeholder `*.sealed-secret.yml` (11 files) and commit. Argo creates the namespaces; bot pods will stay in `Pending`/`CreateContainerConfigError` only for secrets that are still placeholders.
-4. First CI run on `codex/beta-f-staging` (or `workflow_dispatch`) pushes the three images and commits real tags here; Argo rolls them out.
+4. First CI run on `deployment-beta` (or `workflow_dispatch`) pushes the three images and commits real tags here; Argo rolls them out.
 5. `clickhouse-worker`: it runs on its own consumer group (`if-market.clickhouse-worker.k8s.manual`), so it can consume alongside the EC2 worker writing to ClickHouse Cloud. Compare row counts, then stop the EC2 worker and decide where the API reads from.
 6. Bots, one market at a time: `docker compose stop market-maker-<x>` on EC2, confirm its resting orders are cancelled, then `kubectl -n market-maker scale deploy/market-maker-<x> --replicas=1` (all bot Deployments can start at `replicas: 0` by editing the file before step 3 if you want that gate). Never run one market's bot in both places at once.
