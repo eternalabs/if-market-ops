@@ -8,22 +8,23 @@ namespace: prediction-maker
 # Argo prunes the objects. Market ids are reused after a catalog reset, so
 # never leave a resolved market's Deployment in place.
 resources:
-  - namespace.yml
-  - dockerhub-pull.sealed-secret.yml
-  - common-env.yml
-  - midterms.sealed-secret.yml
-  - midterms.yml
-  - midterms-gop.sealed-secret.yml
-  - midterms-gop.yml
-  - gemini-oct15.sealed-secret.yml
-  - gemini-oct15.yml
-  - iran-oct31.sealed-secret.yml
-  - iran-oct31.yml
-  - fed-oct28.sealed-secret.yml
-  - fed-oct28.yml
+- namespace.yml
+- dockerhub-pull.sealed-secret.yml
+- common-env.yml
+- midterms.sealed-secret.yml
+- midterms.yml
+- midterms-gop.sealed-secret.yml
+- midterms-gop.yml
+- gemini-oct15.sealed-secret.yml
+- gemini-oct15.yml
+- iran-oct31.sealed-secret.yml
+- iran-oct31.yml
+- fed-oct28.sealed-secret.yml
+- fed-oct28.yml
 
 # CI rewrites newTag (kustomize edit set image). Do not edit by hand unless
 # rolling back on purpose.
 images:
-  - name: docker.io/labseterna/if-market-beta-prediction-maker
-    newTag: sha-0e232c2
+- name: docker.io/labseterna/if-market-beta-prediction-maker
+  newName: docker.io/labseterna/if-market-beta-prediction-maker
+  newTag: sha-da8bea1
