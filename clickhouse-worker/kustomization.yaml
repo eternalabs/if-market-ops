@@ -30,4 +30,4 @@ configMapGenerator:
 images:
 - name: docker.io/labseterna/if-market-beta-clickhouse-worker
   newName: docker.io/labseterna/if-market-beta-clickhouse-worker
-  newTag: sha-da8bea1
+  newTag: sha-8e1fcdc
