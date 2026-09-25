@@ -1,0 +1,51 @@
+# Creates the worker ClickHouse user and the system.* grants startup validation
+# needs. Runs as the operator default user (no password) so it still works after
+# a clean cluster recreate. Schema init (hook-weight 10) authenticates as this
+# user and will fail if this Job has not succeeded.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: clickhouse-bootstrap-user
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook-weight: "5"
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  backoffLimit: 6
+  ttlSecondsAfterFinished: 3600
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: clickhouse-bootstrap-user
+        app.kubernetes.io/part-of: if-market
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: clickhouse-client
+          image: clickhouse/clickhouse-server:25.3
+          command: ["/bin/sh", "-ec"]
+          args:
+            - |
+              host="$(echo "$CLICKHOUSE_WORKER_CLICKHOUSE_URL" | sed -E 's#^https?://([^:/]+).*#\1#')"
+              user="$CLICKHOUSE_WORKER_CLICKHOUSE_USER"
+              echo "bootstrapping ${user} on ${host}"
+              clickhouse-client --host "$host" --port 9000 --multiquery <<SQL
+              CREATE USER IF NOT EXISTS ${user} IDENTIFIED WITH sha256_password BY '${CLICKHOUSE_WORKER_CLICKHOUSE_PASSWORD}';
+              CREATE DATABASE IF NOT EXISTS if_market_logs;
+              GRANT ALL ON if_market_logs.* TO ${user};
+              GRANT SELECT ON system.tables TO ${user};
+              GRANT SELECT ON system.columns TO ${user};
+              GRANT SELECT ON system.mutations TO ${user};
+              SQL
+              echo "user bootstrapped"
+          envFrom:
+            - configMapRef:
+                name: clickhouse-worker-env
+            - secretRef:
+                name: clickhouse-worker-secrets
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 256Mi

@@ -38,7 +38,7 @@ If the webhook objects fail with `no endpoints available for service "cert-manag
 
 ## ClickHouse
 
-`clickhouse/deployment.yml` creates namespace `clickhouse`, Keeper named `keeper` (3 replicas, 100m/256Mi request, 500m/512Mi limit, 10Gi gp3), and ClickHouse named `clickhouse` (1 shard, 2 replicas, 2 CPU and 8Gi request and limit, 10Gi gp3 each). The operator owns the replica count.
+`clickhouse/deployment.yml` creates namespace `clickhouse`, Keeper named `keeper` (3 replicas, 100m/256Mi request, 500m/512Mi limit, 10Gi gp3), and ClickHouse named `clickhouse` (1 shard, 2 replicas, 2 CPU and 8Gi request and limit, 20Gi gp3 each). Images are pinned to `clickhouse/clickhouse-server:25.3` and `clickhouse/clickhouse-keeper:25.3` so the Rust `clickhouse 0.15` worker client can decompress HTTP responses. Do not float `:latest` — 26.x returns LZ4 frames that crash the worker with `decompression error: incorrect magic number`. The operator owns the replica count. Downgrading an existing volume from 26.x to 25.3 is not supported; wipe the `clickhouse` PVCs and let the operator recreate empty disks.
 
 ## Argo CD
 
@@ -147,13 +147,16 @@ One workflow per service (`.github/workflows/clickhouse-worker.yml`, `market-mak
 
 ### ClickHouse user
 
-The worker authenticates with `CLICKHOUSE_WORKER_CLICKHOUSE_USER` / `_PASSWORD` from `clickhouse-worker/sealed-secret.yml`. Create that user on the in-cluster ClickHouse before the first sync (the schema Job runs as this user):
+The worker authenticates with `CLICKHOUSE_WORKER_CLICKHOUSE_USER` / `_PASSWORD` from `clickhouse-worker/sealed-secret.yml`. `bootstrap-user-job.yml` creates that user on every Argo sync (hook-weight 5) and grants `SELECT` on `system.tables`, `system.columns`, and `system.mutations` — startup validation reads those catalogs. To create it by hand:
 
 ```bash
-kubectl -n clickhouse exec -it sts/clickhouse -- clickhouse-client --query "
+kubectl -n clickhouse exec -it clickhouse-clickhouse-0-0-0 -- clickhouse-client --query "
   CREATE USER IF NOT EXISTS ifmarket IDENTIFIED WITH sha256_password BY '<password>';
   CREATE DATABASE IF NOT EXISTS if_market_logs;
   GRANT ALL ON if_market_logs.* TO ifmarket;
+  GRANT SELECT ON system.tables TO ifmarket;
+  GRANT SELECT ON system.columns TO ifmarket;
+  GRANT SELECT ON system.mutations TO ifmarket;
 "
 ```
 

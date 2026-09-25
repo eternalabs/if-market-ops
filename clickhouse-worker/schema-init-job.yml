@@ -3,9 +3,8 @@
 # on an initialized database. Argo deletes the previous Job before running it
 # again (hook-delete-policy), which is what lets an immutable Job re-run.
 #
-# The ClickHouse user/password used here are the worker's own credentials;
-# the user must exist and own if_market_logs first (see walkthrough/install.md,
-# "ClickHouse user").
+# The ClickHouse user/password used here are the worker's own credentials.
+# bootstrap-user-job.yml (hook-weight 5) creates that user first.
 apiVersion: batch/v1
 kind: Job
 metadata:

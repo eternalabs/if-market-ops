@@ -9,6 +9,7 @@ resources:
 - serviceaccount.yml
 - common-env.yml
 - sealed-secret.yml
+- bootstrap-user-job.yml
 - schema-init-job.yml
 - deployment.yml
 
