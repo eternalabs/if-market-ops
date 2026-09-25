@@ -26,4 +26,4 @@ resources:
 # rolling back on purpose.
 images:
   - name: docker.io/labseterna/if-market-beta-market-maker
-    newTag: sha-0000000
+    newTag: sha-0e232c2

@@ -28,4 +28,4 @@ configMapGenerator:
 # rolling back on purpose.
 images:
   - name: docker.io/labseterna/if-market-beta-clickhouse-worker
-    newTag: sha-0000000
+    newTag: sha-0e232c2
