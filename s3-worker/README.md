@@ -41,6 +41,8 @@ recovery explicitly. `/tmp` is disposable scratch. No static AWS keys or node
 role fallback are configured. The nine in-memory 64 MiB buffers plus SDK copies
 need memory headroom; start with a 1 GiB request / 2 GiB limit and measure before
 tuning. Producer/Kafka retention settings are not changed by this deployment.
+The release pipeline currently builds only `linux/amd64`, so the Deployment
+explicitly selects amd64 nodes in this mixed-architecture cluster.
 
 ## Build and GitOps
 
