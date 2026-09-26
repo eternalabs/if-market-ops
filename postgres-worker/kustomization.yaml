@@ -1,0 +1,14 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: postgres-worker
+resources:
+- namespace.yml
+- service-account.yml
+- common-env.yml
+- sealed-secret.yml
+- dockerhub-pull.sealed-secret.yml
+- deployment.yml
+images:
+- name: docker.io/labseterna/if-market-beta-postgres-worker
+  newName: docker.io/labseterna/if-market-beta-postgres-worker
+  newTag: sha-8640423

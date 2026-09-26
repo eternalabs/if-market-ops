@@ -1,0 +1,83 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-worker
+  labels:
+    app.kubernetes.io/name: postgres-worker
+    app.kubernetes.io/part-of: if-market
+spec:
+  # Activation requires a verified stopped-EC2 handoff. Keep a single owner.
+  replicas: 0
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: postgres-worker
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: postgres-worker
+        app.kubernetes.io/part-of: if-market
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9464"
+    spec:
+      serviceAccountName: postgres-worker
+      nodeSelector:
+        kubernetes.io/arch: amd64
+      imagePullSecrets:
+      - name: dockerhub-pull
+      terminationGracePeriodSeconds: 90
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        fsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: postgres-worker
+        image: docker.io/labseterna/if-market-beta-postgres-worker
+        imagePullPolicy: IfNotPresent
+        envFrom:
+        - configMapRef:
+            name: postgres-worker-env
+        - secretRef:
+            name: postgres-worker-secrets
+        ports:
+        - name: metrics
+          containerPort: 9464
+        startupProbe:
+          httpGet:
+            path: /health
+            port: metrics
+          periodSeconds: 5
+          failureThreshold: 24
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: metrics
+          periodSeconds: 15
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: metrics
+          periodSeconds: 10
+        resources:
+          requests:
+            cpu: 250m
+            memory: 256Mi
+          limits:
+            memory: 1Gi
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop: ["ALL"]
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+      volumes:
+      - name: tmp
+        emptyDir:
+          sizeLimit: 128Mi

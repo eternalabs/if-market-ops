@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: user-bot-env
+data:
+  IFMARKET_METRICS_ENABLED: "true"
+  IFMARKET_METRICS_BIND_ADDR: 0.0.0.0:9464
+  RUST_LOG: info,bots::user_flow=debug

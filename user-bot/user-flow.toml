@@ -1,0 +1,121 @@
+[global]
+api_url = "https://api.beta.if.market"
+ws_url = "wss://api.beta.if.market/ws"
+api_key_env = "IFM_USER_API_KEY"
+wallet_private_key_env = "IFM_USER_WALLET_PRIVATE_KEY"
+eip712_chain_id = 998
+eip712_verifying_contract = "0x0000000000000000000000000000000000000000"
+runtime_dir = "/app/.runtime/user-flow"
+
+# One process discovers and trades both outcomes of every enabled open asset.
+include_prediction = true
+include_impact = true
+catalog_refresh_ms = 60000
+startup_snapshot_timeout_ms = 30000
+max_data_age_ms = 15000
+account_max_rps = 100
+dry_run = false
+
+# Each accepted accumulation order is randomly sized from $10 to $50.
+# Liquidation orders use the same range and are capped to the held position.
+min_order_notional = "10"
+max_order_notional = "50"
+marketability_bps = 2000
+# Temporary global grid until tick size is exposed by outcome metadata.
+# Buys round up and sells round down so rounding remains marketable.
+price_tick = "0.1"
+quantity_increment = "0.000001"
+min_price = "0.1"
+max_binary_price = "1"
+
+# Each outcome independently accumulates for a random buy burst, then sells
+# back to flat. Outcomes are scheduled independently, so phases naturally mix.
+min_buys_per_cycle = 2
+max_buys_per_cycle = 6
+min_global_interval_ms = 25
+max_global_interval_ms = 75
+min_lane_cooldown_ms = 1000
+max_lane_cooldown_ms = 2000
+no_fill_retry_ms = 500
+
+# Notional caps bound accumulation without consulting L2 depth.
+max_outcome_inventory_notional = "300"
+max_total_inventory_notional = "15000"
+
+# Small continuous flow: well below the maker's $200-$320 inner orders.
+# A one-tick price bound limits slippage; it is not a promise of a fill.
+[global.impact]
+min_order_notional = "10"
+max_order_notional = "50"
+max_inventory_notional = "3000"
+
+[[global.impact.assets]]
+asset_id = 1 # BTC
+price_tick = "1"
+quantity_increment = "0.00001"
+max_price_distance_ticks = 1
+
+[[global.impact.assets]]
+asset_id = 4 # GOLD
+price_tick = "0.1"
+quantity_increment = "0.0001"
+max_price_distance_ticks = 1
+
+[[global.impact.assets]]
+asset_id = 7 # GOOGL
+price_tick = "0.01"
+quantity_increment = "0.001"
+max_price_distance_ticks = 1
+
+[[global.impact.assets]]
+asset_id = 5 # BRENTOIL
+price_tick = "0.001"
+quantity_increment = "0.01"
+max_price_distance_ticks = 1
+
+# Applies to ordinary impact flow, shocks, and their full-position closes.
+# Stale/depleted books pause trading without force-closing the holding.
+# The spot band also clamps the actual IOC limit, not only the initial BBO.
+[global.impact.guard]
+max_spread_bps = 25
+max_spot_deviation_bps = 1000
+min_native_levels = 5
+
+# PAPER BETA ONLY: intermittent depth shocks, separate from ordinary flow.
+# Random configured impact YES/NO book, random buy/short, opening from flat.
+# Peak notional is sized at BBO; peak execution budget is $6k at the 20% collar.
+# Both target and collar budget taper with prediction probability below.
+# At most two shocks, one per asset; an asset is reusable only after flat.
+# The next random interval begins after each attempt/close; restart drains existing impact
+# inventory first. Prediction books never participate in this sizing mode.
+[global.impact.shocks]
+enabled = true
+paper_trading = true
+order_notional = "5000"
+max_opening_notional = "6000"
+# Peak at 50/50; multiply opening target and collar budget by 2*min(p,1-p).
+# Missing/stale prediction pair skips new shocks; closes still cover all held units.
+probability_scaling = true
+# Separate 1-2s small-flow scheduler preserves the actual shock quantity.
+# Adds at most one $10-$50 slice in its direction, then reduces only the extra.
+small_flow_during_hold = true
+# Submit the entire actual holding as one reduce-only IOC, not $5k chunks.
+unwind_full_position = true
+# Used only if unwind_full_position is disabled.
+unwind_order_notional = "5000"
+max_concurrent_shocks = 2
+min_interval_ms = 30000
+max_interval_ms = 60000
+# Keep the shock position through a separate holding cycle before closing.
+# Full close is held; small extra-inventory trades continue on this outcome.
+min_hold_ms = 600000
+max_hold_ms = 1200000
+marketability_bps = 2000
+
+# Burn equal YES+NO prediction holdings into iUSD, including tokens minted
+# by impact closes. Unmatched holdings remain available to the sell cycle.
+[global.merge]
+enabled = true
+interval_ms = 5000
+min_quantity = "1"
+max_quantity = "1000"

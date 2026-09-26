@@ -1,0 +1,96 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-bot
+  labels:
+    app.kubernetes.io/name: user-bot
+    app.kubernetes.io/part-of: if-market
+spec:
+  # Activation requires a verified stopped-EC2 handoff. Keep a single owner.
+  replicas: 0
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: user-bot
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: user-bot
+        app.kubernetes.io/part-of: if-market
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9464"
+    spec:
+      serviceAccountName: user-bot
+      nodeSelector:
+        kubernetes.io/arch: amd64
+      imagePullSecrets:
+      - name: dockerhub-pull
+      terminationGracePeriodSeconds: 90
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        fsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: user-bot
+        image: docker.io/labseterna/if-market-beta-user-bot
+        imagePullPolicy: IfNotPresent
+        envFrom:
+        - configMapRef:
+            name: user-bot-env
+        - secretRef:
+            name: user-bot-secrets
+        ports:
+        - name: metrics
+          containerPort: 9464
+        startupProbe:
+          httpGet:
+            path: /health
+            port: metrics
+          periodSeconds: 5
+          failureThreshold: 24
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: metrics
+          periodSeconds: 15
+        # This binary does not publish service-ready metrics; live feed/order
+        # health must also be checked after rollout, not inferred from this probe.
+        readinessProbe:
+          tcpSocket:
+            port: metrics
+          periodSeconds: 10
+        resources:
+          requests:
+            cpu: 500m
+            memory: 256Mi
+          limits:
+            memory: 1Gi
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop: ["ALL"]
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+        - name: runtime
+          mountPath: /app/.runtime/user-flow
+        - name: config
+          mountPath: /app/user-flow.toml
+          subPath: user-flow.toml
+          readOnly: true
+      volumes:
+      - name: tmp
+        emptyDir:
+          sizeLimit: 128Mi
+      - name: runtime
+        persistentVolumeClaim:
+          claimName: user-bot-runtime
+      - name: config
+        configMap:
+          name: user-bot-config

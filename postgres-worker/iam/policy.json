@@ -1,0 +1,38 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ConnectKafka",
+      "Effect": "Allow",
+      "Action": [
+        "kafka-cluster:Connect",
+        "kafka-cluster:DescribeCluster"
+      ],
+      "Resource": "arn:aws:kafka:us-east-1:533267424142:cluster/beta-if-market-kafka/a623af84-f981-42a4-893a-9f3997663c08-12"
+    },
+    {
+      "Sid": "ReadClearingOnly",
+      "Effect": "Allow",
+      "Action": [
+        "kafka-cluster:DescribeTopic",
+        "kafka-cluster:ReadData"
+      ],
+      "Resource": "arn:aws:kafka:us-east-1:533267424142:topic/beta-if-market-kafka/a623af84-f981-42a4-893a-9f3997663c08-12/clearing.v10"
+    },
+    {
+      "Sid": "PreserveExistingGroup",
+      "Effect": "Allow",
+      "Action": [
+        "kafka-cluster:DescribeGroup",
+        "kafka-cluster:AlterGroup"
+      ],
+      "Resource": "arn:aws:kafka:us-east-1:533267424142:group/beta-if-market-kafka/a623af84-f981-42a4-893a-9f3997663c08-12/if-market.postgres-control.v10"
+    },
+    {
+      "Sid": "ConnectExistingProxyUser",
+      "Effect": "Allow",
+      "Action": "rds-db:connect",
+      "Resource": "arn:aws:rds-db:us-east-1:533267424142:dbuser:prx-05c3c6af42d9f8923/postgres"
+    }
+  ]
+}

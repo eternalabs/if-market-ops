@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-worker-env
+data:
+  DATABASE_IAM_AUTH: "true"
+  POSTGRES_WORKER_TOPIC: clearing.v10
+  # Preserve the EC2 group: Kafka's committed next offset is the resume source.
+  POSTGRES_WORKER_GROUP_ID: if-market.postgres-control.v10
+  POSTGRES_WORKER_ARCHIVE_STREAM_ID: "302"
+  POSTGRES_WORKER_MESSAGE_MAX_BYTES: "17825792"
+  KAFKA_IAM_AUTH: "true"
+  KAFKA_SECURITY_PROTOCOL: SASL_SSL
+  KAFKA_SASL_MECHANISM: OAUTHBEARER
+  AWS_REGION: us-east-1
+  AWS_DEFAULT_REGION: us-east-1
+  AWS_EC2_METADATA_DISABLED: "true"
+  IFMARKET_METRICS_ENABLED: "true"
+  IFMARKET_METRICS_BIND_ADDR: 0.0.0.0:9464
+  RUST_LOG: info,postgres_worker=info
