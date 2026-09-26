@@ -204,12 +204,12 @@ Credentials created the same day and stored in AWS Secrets Manager (`us-east-1`)
 
 ## S3 archive worker
 
-`s3-worker/` is staged at zero replicas with its own EKS Pod Identity and sealed
-broker/registry credentials. The EC2 S3 worker remains the archive writer.
-The new `if-market-rs` s3-worker image workflow follows the same deployment-beta
-build/tag-bump pattern as ClickHouse; publishing an image does not activate it.
+`s3-worker/` is active at one replica with its own EKS Pod Identity and sealed
+broker/registry credentials. The EC2 S3 worker is stopped and removed from beta
+Compose. The image workflow follows the same deployment-beta build/tag-bump
+pattern as ClickHouse; the Deployment uses Recreate and amd64 nodes.
 No PVC is needed: this worker recovers from S3 segments, indexes and route tails.
-Its staged IAM role permits reads, not uploads. Follow
-[`s3-worker/README.md`](../s3-worker/README.md) for the separate exclusive-writer
-handoff, write-policy activation and all nine stream retention checks. Do not
+Its IAM role permits reads and uploads under the existing `v2/` prefix, not deletion.
+See [`s3-worker/README.md`](../s3-worker/README.md) for the exclusive-writer
+handoff evidence and rollback gates. Do not
 run both workers against `ifmarket-archive-tape-beta/v2/`.
