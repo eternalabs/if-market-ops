@@ -30,7 +30,7 @@ metadata:
     app.kubernetes.io/instance: midterms-gop
     app.kubernetes.io/part-of: if-market
 spec:
-  replicas: 1
+  replicas: 0
   # Exactly one quoting process per market and wallet; never overlap old/new.
   strategy:
     type: Recreate
