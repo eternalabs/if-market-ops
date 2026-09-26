@@ -15,13 +15,13 @@ resources:
 - midterms-btc.sealed-secret.yml
 - midterms-btc.yml
 - midterms-gop-btc.sealed-secret.yml
-# - midterms-gop-btc.yml
+- midterms-gop-btc.yml
 - gemini-oct15-googl.sealed-secret.yml
-# - gemini-oct15-googl.yml
+- gemini-oct15-googl.yml
 - iran-oct31-brentoil.sealed-secret.yml
-# - iran-oct31-brentoil.yml
+- iran-oct31-brentoil.yml
 - fed-oct28-gold.sealed-secret.yml
-# - fed-oct28-gold.yml
+- fed-oct28-gold.yml
 
 # CI rewrites newTag (kustomize edit set image). Do not edit by hand unless
 # rolling back on purpose.
