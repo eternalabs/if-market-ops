@@ -6,9 +6,9 @@ metadata:
     app.kubernetes.io/name: s3-worker
     app.kubernetes.io/part-of: if-market
 spec:
-  # STAGED ONLY. EC2 still owns the same bucket/prefix. Image CI never changes
-  # this value. Activation requires a separately verified writer handoff.
-  replicas: 0
+  # Sole archive writer. EC2 was stopped and its Compose service removed.
+  # Never increase replicas or run another writer against the same S3 prefix.
+  replicas: 1
   strategy:
     type: Recreate
   selector:

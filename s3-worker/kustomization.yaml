@@ -12,7 +12,6 @@ configMapGenerator:
 - files:
   - s3-worker.toml
   name: s3-worker-config
-    # Deliberately unlaunchable until CI publishes the first release image.
 images:
 - name: docker.io/labseterna/if-market-beta-s3-worker
   newName: docker.io/labseterna/if-market-beta-s3-worker

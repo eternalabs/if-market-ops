@@ -15,7 +15,7 @@ data:
   S3_WORKER_KAFKA_CLEARING_TOPIC: clearing.v10
   S3_WORKER_KAFKA_SPOT_TOPIC: realtime.spot.v1
   S3_WORKER_KAFKA_CANDLES_TOPIC: realtime.candles.v1
-  # Same archive as EC2: replicas MUST stay zero until that writer is stopped.
+  # Preserve the archive identity from EC2; Kubernetes is now its sole writer.
   S3_WORKER_S3_BUCKET: ifmarket-archive-tape-beta
   S3_WORKER_S3_REGION: us-east-1
   S3_WORKER_S3_KEY_PREFIX: v2
