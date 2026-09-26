@@ -4,6 +4,24 @@ The image tag remains CI-managed and clearing mode remains explicitly `legacy`.
 This preparation does not copy Cloud history, reset Kafka offsets, bootstrap
 consumer groups, drop tables, or redirect the API/EC2 writer.
 
+## Verified deployment — 2026-09-26
+
+- Preparation commit: `ffc8402`, synced by Argo; schema/bootstrap jobs succeeded.
+- PVC `clickhouse-worker/clickhouse-worker-journal` is Bound to PV
+  `pvc-99d9ffa8-a249-4351-9749-d1d1e039508c` with reclaim policy Retain.
+- AWS confirms `vol-02cafddfef1099bcf`: encrypted gp3, 2 GiB, us-east-1b.
+- UID/GID 65532 could write the mount. A temporary proof file survived a
+  controlled Recreate restart from pod `clickhouse-worker-595b988dd-kzmjn` to
+  `clickhouse-worker-b977f6976-dzltf`; the test file was then removed.
+- Both existing volume aggregate inner tables now report
+  `non_replicated_deduplication_window = 4096`.
+- Image stayed `sha-612f056`, mode stayed legacy, Kubernetes group prefix stayed
+  distinct, and no clearing journals were bootstrapped or Kafka offsets reset.
+- The replacement pod runs without container restarts but reports unready (HTTP
+  503): legacy clearing is empty while Kafka's retained low is 39,696,907. This
+  predates preparation; the new probe exposes it correctly. Storage preparation
+  is complete, but ingestion activation and a groups recovery rehearsal are not.
+
 ## Persistent recovery storage
 
 `journal-storage.yml` creates an encrypted 2 GiB gp3 claim through EKS Auto Mode.
