@@ -10,10 +10,10 @@ resources:
 - deployment.yml
 - pvc.yml
 configMapGenerator:
-- name: user-bot-config
-  files:
+- files:
   - user-flow.toml
+  name: user-bot-config
 images:
 - name: docker.io/labseterna/if-market-beta-user-bot
   newName: docker.io/labseterna/if-market-beta-user-bot
-  newTag: sha-8640423
+  newTag: sha-de35523
