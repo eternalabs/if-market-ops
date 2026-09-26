@@ -6,8 +6,8 @@ metadata:
     app.kubernetes.io/name: user-bot
     app.kubernetes.io/part-of: if-market
 spec:
-  # Activation requires a verified stopped-EC2 handoff. Keep a single owner.
-  replicas: 0
+  # EC2 retired; sequence transferred to the PVC. Keep a single owner.
+  replicas: 1
   strategy:
     type: Recreate
   selector:
