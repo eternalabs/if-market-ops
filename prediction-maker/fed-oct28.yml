@@ -30,7 +30,7 @@ metadata:
     app.kubernetes.io/instance: fed-oct28
     app.kubernetes.io/part-of: if-market
 spec:
-  replicas: 0
+  replicas: 1
   # Exactly one quoting process per market and wallet; never overlap old/new.
   strategy:
     type: Recreate
