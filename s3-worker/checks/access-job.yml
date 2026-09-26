@@ -34,7 +34,11 @@ spec:
               echo "Pod Identity: expected S3-worker role"
               for route in matching-input-200 matching-snapshot-201 matching-response-202 matching-quarantine-203 realtime-input-300 realtime-snapshot-301 clearing-ifpo-302 spot-303 candles-304; do
                 prefix="$S3_WORKER_S3_KEY_PREFIX/$route/"
-                aws s3api list-objects-v2 --bucket "$S3_WORKER_S3_BUCKET" --prefix "$prefix" --max-keys 1 --no-paginate --query KeyCount --output text
+                count="$(aws s3api list-objects-v2 --bucket "$S3_WORKER_S3_BUCKET" --prefix "$prefix" --max-keys 1 --no-paginate --query KeyCount --output text)"
+                if [ "$count" = 0 ]; then
+                  echo "archive list access: $route (empty; no tail to check)"
+                  continue
+                fi
                 # Metadata only; reading actual tails/segments and comparing to
                 # Kafka is a separate cutover gate, not claimed by this check.
                 aws s3api head-object --bucket "$S3_WORKER_S3_BUCKET" --key "${prefix}tail.json" --query '{bytes:ContentLength,modified:LastModified}' --output json

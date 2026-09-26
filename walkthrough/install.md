@@ -201,3 +201,15 @@ Credentials created the same day and stored in AWS Secrets Manager (`us-east-1`)
 4. First CI run on `deployment-beta` (or `workflow_dispatch`) pushes the three images and commits real tags here; Argo rolls them out.
 5. `clickhouse-worker`: it runs on its own consumer group (`if-market.clickhouse-worker.k8s.manual`), so it can consume alongside the EC2 worker writing to ClickHouse Cloud. Compare row counts, then stop the EC2 worker and decide where the API reads from.
 6. Bots, one market at a time: `docker compose stop market-maker-<x>` on EC2, confirm its resting orders are cancelled, then `kubectl -n market-maker scale deploy/market-maker-<x> --replicas=1` (all bot Deployments can start at `replicas: 0` by editing the file before step 3 if you want that gate). Never run one market's bot in both places at once.
+
+## S3 archive worker
+
+`s3-worker/` is staged at zero replicas with its own EKS Pod Identity and sealed
+broker/registry credentials. The EC2 S3 worker remains the archive writer.
+The new `if-market-rs` s3-worker image workflow follows the same deployment-beta
+build/tag-bump pattern as ClickHouse; publishing an image does not activate it.
+No PVC is needed: this worker recovers from S3 segments, indexes and route tails.
+Its staged IAM role permits reads, not uploads. Follow
+[`s3-worker/README.md`](../s3-worker/README.md) for the separate exclusive-writer
+handoff, write-policy activation and all nine stream retention checks. Do not
+run both workers against `ifmarket-archive-tape-beta/v2/`.

@@ -5,6 +5,26 @@ archive writer. `replicas: 0` and a read-only AWS policy are deliberate gates.
 EC2 `ifmarket-s3-worker` remains the sole writer of
 `s3://ifmarket-archive-tape-beta/v2/` until a separately verified handoff.
 
+## Verified staging — 2026-09-26
+
+- Application pipeline commit: `49cd11d` on `codex/beta-f-staging` (not merged
+  into deployment-beta). Initial ops deployment commit: `3ff8873`.
+- Argo installed the namespace, service account, ConfigMaps, both decrypted
+  sealed Secrets and the zero-replica Deployment; application Synced/Healthy.
+- The read-only access Job successfully assumed the exact S3-worker role and
+  listed all nine route prefixes. It could HEAD all eight existing tail objects;
+  the quarantine route is empty and has no tail to check. No S3 writes occurred.
+- IAM simulation allowed GetObject and denied PutObject/DeleteObject for the
+  configured archive prefix. The activation write policy remains unattached.
+- 26 S3-worker unit tests, workflow actionlint, Dockerfile build checks,
+  Kubernetes TOML contract checks and server-side manifest dry runs passed.
+  Strict clippy is not clean: seven pre-existing style warnings in config.rs,
+  segment.rs and worker.rs are promoted to errors by `-D warnings`. The image
+  workflow's gate is cargo check, not strict clippy; no runtime code was changed.
+- A full image build/push, Kafka connectivity and nine-route crash/cutover
+  rehearsal are still release gates. The stopped Deployment's placeholder tag
+  does not imply a published or tested runtime image.
+
 ## Architecture and storage
 
 Unlike the ClickHouse worker, this worker needs no PVC. Its existing protocol
