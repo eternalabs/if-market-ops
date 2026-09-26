@@ -1,0 +1,19 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: s3-worker
+resources:
+  - namespace.yml
+  - serviceaccount.yml
+  - common-env.yml
+  - sealed-secret.yml
+  - dockerhub-pull.sealed-secret.yml
+  - deployment.yml
+configMapGenerator:
+  - name: s3-worker-config
+    files:
+      - s3-worker.toml
+images:
+  - name: docker.io/labseterna/if-market-beta-s3-worker
+    newName: docker.io/labseterna/if-market-beta-s3-worker
+    # Deliberately unlaunchable until CI publishes the first release image.
+    newTag: awaiting-first-build

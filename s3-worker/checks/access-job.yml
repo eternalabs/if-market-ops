@@ -1,0 +1,70 @@
+# Manual, read-only check. Not part of the continuously reconciled workload.
+# Run only after Argo has created the namespace, config and service account.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: s3-worker-access-check
+  namespace: s3-worker
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 180
+  ttlSecondsAfterFinished: 3600
+  template:
+    spec:
+      serviceAccountName: s3-worker
+      restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        fsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: aws-read-check
+          image: public.ecr.aws/aws-cli/aws-cli:2.27.49@sha256:bad3346a39098ab077be6ed58c7e1fe68321a4a844c7c740318100013e6c3581
+          command: [/bin/sh, -ec]
+          args:
+            - |
+              identity="$(aws sts get-caller-identity --query Arn --output text)"
+              case "$identity" in
+                arn:aws:sts::533267424142:assumed-role/beta-if-market-s3-worker/*) ;;
+                *) echo "unexpected AWS identity"; exit 1 ;;
+              esac
+              echo "Pod Identity: expected S3-worker role"
+              for route in matching-input-200 matching-snapshot-201 matching-response-202 matching-quarantine-203 realtime-input-300 realtime-snapshot-301 clearing-ifpo-302 spot-303 candles-304; do
+                prefix="$S3_WORKER_S3_KEY_PREFIX/$route/"
+                aws s3api list-objects-v2 --bucket "$S3_WORKER_S3_BUCKET" --prefix "$prefix" --max-keys 1 --no-paginate --query KeyCount --output text
+                # Metadata only; reading actual tails/segments and comparing to
+                # Kafka is a separate cutover gate, not claimed by this check.
+                aws s3api head-object --bucket "$S3_WORKER_S3_BUCKET" --key "${prefix}tail.json" --query '{bytes:ContentLength,modified:LastModified}' --output json
+                echo "archive read access: $route"
+              done
+          envFrom:
+            - configMapRef:
+                name: s3-worker-env
+          env:
+            - name: AWS_PAGER
+              value: ""
+            - name: AWS_CONFIG_FILE
+              value: /tmp/unused-aws-config
+            - name: AWS_SHARED_CREDENTIALS_FILE
+              value: /tmp/unused-aws-credentials
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              memory: 256Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 32Mi

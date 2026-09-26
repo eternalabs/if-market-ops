@@ -1,0 +1,31 @@
+# No credentials. The broker override is supplied by a sealed Secret.
+[kafka]
+brokers = "overridden-by-S3_WORKER_KAFKA_BROKERS"
+client_id_prefix = "if-market.s3-worker.k8s"
+group_id_prefix = "if-market.s3-worker.k8s"
+input_topic = "matching-engine.input.v10"
+response_topic = "matching-engine.response.v10"
+snapshot_topic = "matching-engine.snapshot.v10"
+quarantine_topic = "matching-engine.quarantine.v10"
+realtime_input_topic = "realtime.input.v10"
+realtime_snapshot_topic = "realtime.snapshot.v10"
+clearing_topic = "clearing.v10"
+spot_topic = "realtime.spot.v1"
+candles_topic = "realtime.candles.v1"
+message_max_bytes = 17825792
+poll_timeout_ms = 1000
+request_timeout_ms = 10000
+
+[s3]
+bucket = "ifmarket-archive-tape-beta"
+region = "us-east-1"
+force_path_style = false
+key_prefix = "v2"
+request_timeout_ms = 30000
+
+[batching]
+max_segment_bytes = 67108864
+max_segment_delay_ms = 60000
+index_stride = 1024
+retry_delay_ms = 5000
+allow_gap_resume = false

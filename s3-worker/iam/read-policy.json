@@ -1,0 +1,46 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ConnectBetaKafka",
+      "Effect": "Allow",
+      "Action": ["kafka-cluster:Connect", "kafka-cluster:DescribeCluster"],
+      "Resource": "arn:aws:kafka:us-east-1:533267424142:cluster/beta-if-market-kafka/a623af84-f981-42a4-893a-9f3997663c08-12"
+    },
+    {
+      "Sid": "ReadNineArchiveTopics",
+      "Effect": "Allow",
+      "Action": ["kafka-cluster:DescribeTopic", "kafka-cluster:ReadData"],
+      "Resource": [
+        "arn:aws:kafka:us-east-1:533267424142:topic/beta-if-market-kafka/a623af84-f981-42a4-893a-9f3997663c08-12/matching-engine.input.v10",
+        "arn:aws:kafka:us-east-1:533267424142:topic/beta-if-market-kafka/a623af84-f981-42a4-893a-9f3997663c08-12/matching-engine.response.v10",
+        "arn:aws:kafka:us-east-1:533267424142:topic/beta-if-market-kafka/a623af84-f981-42a4-893a-9f3997663c08-12/matching-engine.snapshot.v10",
+        "arn:aws:kafka:us-east-1:533267424142:topic/beta-if-market-kafka/a623af84-f981-42a4-893a-9f3997663c08-12/matching-engine.quarantine.v10",
+        "arn:aws:kafka:us-east-1:533267424142:topic/beta-if-market-kafka/a623af84-f981-42a4-893a-9f3997663c08-12/realtime.input.v10",
+        "arn:aws:kafka:us-east-1:533267424142:topic/beta-if-market-kafka/a623af84-f981-42a4-893a-9f3997663c08-12/realtime.snapshot.v10",
+        "arn:aws:kafka:us-east-1:533267424142:topic/beta-if-market-kafka/a623af84-f981-42a4-893a-9f3997663c08-12/clearing.v10",
+        "arn:aws:kafka:us-east-1:533267424142:topic/beta-if-market-kafka/a623af84-f981-42a4-893a-9f3997663c08-12/realtime.spot.v1",
+        "arn:aws:kafka:us-east-1:533267424142:topic/beta-if-market-kafka/a623af84-f981-42a4-893a-9f3997663c08-12/realtime.candles.v1"
+      ]
+    },
+    {
+      "Sid": "OwnConsumerIdentityOnly",
+      "Effect": "Allow",
+      "Action": ["kafka-cluster:DescribeGroup", "kafka-cluster:AlterGroup"],
+      "Resource": "arn:aws:kafka:us-east-1:533267424142:group/beta-if-market-kafka/a623af84-f981-42a4-893a-9f3997663c08-12/if-market.s3-worker.k8s*"
+    },
+    {
+      "Sid": "ListExistingTape",
+      "Effect": "Allow",
+      "Action": "s3:ListBucket",
+      "Resource": "arn:aws:s3:::ifmarket-archive-tape-beta",
+      "Condition": {"StringLike": {"s3:prefix": ["v2/*"]}}
+    },
+    {
+      "Sid": "ReadExistingTape",
+      "Effect": "Allow",
+      "Action": "s3:GetObject",
+      "Resource": "arn:aws:s3:::ifmarket-archive-tape-beta/v2/*"
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: s3-worker-env
+data:
+  S3_WORKER_CONFIG: /app/s3-worker.toml
+  S3_WORKER_KAFKA_CLIENT_ID_PREFIX: if-market.s3-worker.k8s
+  S3_WORKER_KAFKA_GROUP_ID_PREFIX: if-market.s3-worker.k8s
+  S3_WORKER_KAFKA_INPUT_TOPIC: matching-engine.input.v10
+  S3_WORKER_KAFKA_RESPONSE_TOPIC: matching-engine.response.v10
+  S3_WORKER_KAFKA_SNAPSHOT_TOPIC: matching-engine.snapshot.v10
+  S3_WORKER_KAFKA_QUARANTINE_TOPIC: matching-engine.quarantine.v10
+  S3_WORKER_KAFKA_REALTIME_INPUT_TOPIC: realtime.input.v10
+  S3_WORKER_KAFKA_REALTIME_SNAPSHOT_TOPIC: realtime.snapshot.v10
+  S3_WORKER_KAFKA_CLEARING_TOPIC: clearing.v10
+  S3_WORKER_KAFKA_SPOT_TOPIC: realtime.spot.v1
+  S3_WORKER_KAFKA_CANDLES_TOPIC: realtime.candles.v1
+  # Same archive as EC2: replicas MUST stay zero until that writer is stopped.
+  S3_WORKER_S3_BUCKET: ifmarket-archive-tape-beta
+  S3_WORKER_S3_REGION: us-east-1
+  S3_WORKER_S3_KEY_PREFIX: v2
+  S3_WORKER_ALLOW_GAP_RESUME: "false"
+  KAFKA_IAM_AUTH: "true"
+  KAFKA_SECURITY_PROTOCOL: SASL_SSL
+  KAFKA_SASL_MECHANISM: OAUTHBEARER
+  AWS_REGION: us-east-1
+  AWS_DEFAULT_REGION: us-east-1
+  AWS_EC2_METADATA_DISABLED: "true"
+  IFMARKET_METRICS_ENABLED: "true"
+  IFMARKET_METRICS_BIND_ADDR: 0.0.0.0:9464
+  RUST_LOG: info,s3_worker=info

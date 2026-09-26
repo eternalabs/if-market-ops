@@ -1,0 +1,89 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: s3-worker
+  labels:
+    app.kubernetes.io/name: s3-worker
+    app.kubernetes.io/part-of: if-market
+spec:
+  # STAGED ONLY. EC2 still owns the same bucket/prefix. Image CI never changes
+  # this value. Activation requires a separately verified writer handoff.
+  replicas: 0
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: s3-worker
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: s3-worker
+        app.kubernetes.io/part-of: if-market
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9464"
+    spec:
+      serviceAccountName: s3-worker
+      imagePullSecrets:
+        - name: dockerhub-pull
+      terminationGracePeriodSeconds: 90
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        fsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: s3-worker
+          image: docker.io/labseterna/if-market-beta-s3-worker
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef:
+                name: s3-worker-env
+            - secretRef:
+                name: s3-worker-secrets
+          ports:
+            - name: metrics
+              containerPort: 9464
+          startupProbe:
+            httpGet:
+              path: /health
+              port: metrics
+            periodSeconds: 5
+            failureThreshold: 24
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: metrics
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: metrics
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1Gi
+            limits:
+              memory: 2Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: config
+              mountPath: /app/s3-worker.toml
+              subPath: s3-worker.toml
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: config
+          configMap:
+            name: s3-worker-config
+        - name: tmp
+          emptyDir:
+            sizeLimit: 128Mi

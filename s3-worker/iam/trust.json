@@ -1,0 +1,13 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Effect": "Allow",
+    "Principal": {"Service": "pods.eks.amazonaws.com"},
+    "Action": ["sts:AssumeRole", "sts:TagSession"],
+    "Condition": {"StringEquals": {
+      "aws:RequestTag/eks-cluster-arn": "arn:aws:eks:us-east-1:533267424142:cluster/beta-if-market",
+      "aws:RequestTag/kubernetes-namespace": "s3-worker",
+      "aws:RequestTag/kubernetes-service-account": "s3-worker"
+    }}
+  }]
+}
