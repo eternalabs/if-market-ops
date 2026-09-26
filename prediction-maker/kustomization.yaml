@@ -11,9 +11,9 @@ resources:
 - namespace.yml
 - dockerhub-pull.sealed-secret.yml
 - common-env.yml
-# Provision credentials without activating the commented-out deployments.
+# Credentials are provisioned separately; enable deployments per market.
 - midterms.sealed-secret.yml
-# - midterms.yml
+- midterms.yml
 - midterms-gop.sealed-secret.yml
 # - midterms-gop.yml
 - gemini-oct15.sealed-secret.yml
