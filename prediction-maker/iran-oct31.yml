@@ -48,6 +48,8 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/port: "9464"
     spec:
+      nodeSelector:
+        kubernetes.io/arch: amd64
       imagePullSecrets:
         - name: dockerhub-pull
       terminationGracePeriodSeconds: 90

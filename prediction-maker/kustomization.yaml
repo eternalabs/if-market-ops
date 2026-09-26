@@ -11,15 +11,16 @@ resources:
 - namespace.yml
 - dockerhub-pull.sealed-secret.yml
 - common-env.yml
-# - midterms.sealed-secret.yml
+# Provision credentials without activating the commented-out deployments.
+- midterms.sealed-secret.yml
 # - midterms.yml
-# - midterms-gop.sealed-secret.yml
+- midterms-gop.sealed-secret.yml
 # - midterms-gop.yml
-# - gemini-oct15.sealed-secret.yml
+- gemini-oct15.sealed-secret.yml
 # - gemini-oct15.yml
-# - iran-oct31.sealed-secret.yml
+- iran-oct31.sealed-secret.yml
 # - iran-oct31.yml
-# - fed-oct28.sealed-secret.yml
+- fed-oct28.sealed-secret.yml
 # - fed-oct28.yml
 
 # CI rewrites newTag (kustomize edit set image). Do not edit by hand unless
