@@ -11,4 +11,4 @@ resources:
 images:
 - name: docker.io/labseterna/if-market-beta-postgres-worker
   newName: docker.io/labseterna/if-market-beta-postgres-worker
-  newTag: sha-8640423
+  newTag: sha-de35523
