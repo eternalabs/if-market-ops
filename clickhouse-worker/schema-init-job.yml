@@ -1,6 +1,7 @@
 # Applies the worker's schema to the in-cluster ClickHouse before every sync.
-# Every statement in 0001_init.sql is IF NOT EXISTS, so re-running is a no-op
-# on an initialized database. Argo deletes the previous Job before running it
+# CREATE IF NOT EXISTS preserves existing objects; prepare-groups.sh also raises
+# the two aggregate destination dedup windows without changing rows.
+# Argo deletes the previous Job before running it
 # again (hook-delete-policy), which is what lets an immutable Job re-run.
 #
 # The ClickHouse user/password used here are the worker's own credentials.
@@ -39,6 +40,7 @@ spec:
                 --password "$CLICKHOUSE_WORKER_CLICKHOUSE_PASSWORD" \
                 --multiquery < /schema/0001_init.sql
               echo "schema applied"
+              /bin/sh /schema/prepare-groups.sh
           envFrom:
             - configMapRef:
                 name: clickhouse-worker-env

@@ -9,10 +9,14 @@ metadata:
   name: clickhouse-worker-env
 data:
   CLICKHOUSE_WORKER_CONFIG: /app/clickhouse-worker.toml
+  # Preparation only. Do not activate groups before the destination baseline,
+  # per-group bootstrap and restart rehearsal have been verified.
+  CLICKHOUSE_WORKER_CLEARING_MODE: legacy
+  CLICKHOUSE_WORKER_CLEARING_JOURNAL_DIR: /var/lib/ifmarket-clickhouse-worker/clearing-groups-v1
 
   # Distinct from the EC2 worker's "if-market.clickhouse-worker.v10" prefixes.
-  # Both may consume the same topics during cutover; sharing a group would make
-  # them steal partitions from each other.
+  # These manually assigned consumers do not rebalance. Sharing a group would
+  # corrupt each other's checkpoints, even though the destinations differ.
   CLICKHOUSE_WORKER_KAFKA_CLIENT_ID_PREFIX: if-market.clickhouse-worker.k8s
   CLICKHOUSE_WORKER_KAFKA_GROUP_ID_PREFIX: if-market.clickhouse-worker.k8s.manual
   CLICKHOUSE_WORKER_KAFKA_CLEARING_TOPIC: clearing.v10

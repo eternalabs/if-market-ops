@@ -283,6 +283,7 @@ ENGINE = SummingMergeTree
 PARTITION BY toYYYYMM(bucket_start)
 ORDER BY (bucket_start, outcome_id)
 TTL bucket_start + INTERVAL 2 DAY DELETE
+SETTINGS non_replicated_deduplication_window = 4096
 POPULATE
 AS
 SELECT
@@ -297,6 +298,7 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS if_market_logs.outcome_volume_daily
 ENGINE = SummingMergeTree
 PARTITION BY toYear(bucket_start)
 ORDER BY (bucket_start, outcome_id)
+SETTINGS non_replicated_deduplication_window = 4096
 POPULATE
 AS
 SELECT

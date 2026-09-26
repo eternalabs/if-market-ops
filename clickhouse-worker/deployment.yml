@@ -7,9 +7,9 @@ metadata:
     app.kubernetes.io/part-of: if-market
 spec:
   replicas: 1
-  # One consumer per manual consumer group. Recreate guarantees the old pod is
-  # gone before the new one joins, so a rollout never has two members briefly
-  # fighting over the same partitions.
+  # Manual assignment does not provide group membership/fencing. Keep one
+  # writer; Recreate avoids overlapping writers during ordinary rollouts.
+  # Never force-delete a pod on an unreachable node and start another writer.
   strategy:
     type: Recreate
   selector:
@@ -33,6 +33,7 @@ spec:
         runAsUser: 65532
         runAsGroup: 65532
         fsGroup: 65532
+        fsGroupChangePolicy: OnRootMismatch
         seccompProfile:
           type: RuntimeDefault
       containers:
@@ -60,7 +61,8 @@ spec:
             periodSeconds: 15
             failureThreshold: 3
           readinessProbe:
-            tcpSocket:
+            httpGet:
+              path: /ready
               port: metrics
             periodSeconds: 10
           resources:
@@ -79,9 +81,8 @@ spec:
               mountPath: /app/clickhouse-worker.toml
               subPath: clickhouse-worker.toml
               readOnly: true
-            # Scratch used only by the manual `repair-spot-status` subcommand
-            # (evidence output). Not durable state.
-            - name: repair-scratch
+            # Durable pending writes/checkpoints, also used for repair evidence.
+            - name: journal
               mountPath: /var/lib/ifmarket-clickhouse-worker
             - name: tmp
               mountPath: /tmp
@@ -89,7 +90,8 @@ spec:
         - name: config
           configMap:
             name: clickhouse-worker-config
-        - name: repair-scratch
-          emptyDir: {}
+        - name: journal
+          persistentVolumeClaim:
+            claimName: clickhouse-worker-journal
         - name: tmp
           emptyDir: {}

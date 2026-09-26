@@ -36,6 +36,7 @@ spec:
               GRANT SELECT ON system.tables TO ${user};
               GRANT SELECT ON system.columns TO ${user};
               GRANT SELECT ON system.mutations TO ${user};
+              GRANT SELECT ON system.merge_tree_settings TO ${user};
               SQL
               echo "user bootstrapped"
           envFrom:

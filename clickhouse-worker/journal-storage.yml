@@ -1,0 +1,33 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: clickhouse-worker-journal-gp3
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false,Delete=false
+provisioner: ebs.csi.eks.amazonaws.com
+reclaimPolicy: Retain
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true
+parameters:
+  type: gp3
+  encrypted: "true"
+allowedTopologies:
+  - matchLabelExpressions:
+      - key: eks.amazonaws.com/compute-type
+        values: [auto]
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: clickhouse-worker-journal
+  annotations:
+    # Recovery state must survive app deletion and accidental GitOps pruning.
+    argocd.argoproj.io/sync-options: Prune=false,Delete=false
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: clickhouse-worker-journal-gp3
+  resources:
+    requests:
+      # Four journals capped at 128 MiB each, plus atomic-write temporary files.
+      storage: 2Gi

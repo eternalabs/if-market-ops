@@ -11,6 +11,7 @@ resources:
 - sealed-secret.yml
 - bootstrap-user-job.yml
 - schema-init-job.yml
+- journal-storage.yml
 - deployment.yml
 
 # The worker reads its TOML from disk. Generating the ConfigMap here gives it a
@@ -23,6 +24,7 @@ configMapGenerator:
   name: clickhouse-worker-config
 - files:
   - 0001_init.sql
+  - prepare-groups.sh
   name: clickhouse-schema
 
 # CI rewrites newTag (kustomize edit set image). Do not edit by hand unless
